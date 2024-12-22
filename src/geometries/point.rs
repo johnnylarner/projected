@@ -11,7 +11,8 @@ pub struct ProjectedPoint<Projection> {
 }
 
 impl ToEspg4326 for ProjectedPoint<Espg4326> {
-    fn to_espg_4326(&self) -> ProjectedPoint<Espg4326> {
+    type Output = ProjectedPoint<Espg4326>;
+    fn to_espg_4326(&self) -> Self::Output {
         self.clone()
     }
 }
