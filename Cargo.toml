@@ -1,0 +1,29 @@
+[package]
+name = "projected"
+version = "0.1.0"
+edition = "2021"
+authors = ["johnnylarner"]
+license = "MIT"
+keyword = ["projection", "geo", "georust", "gdal"]
+categoriecs = []
+readme = "README.md"
+repository = "https://github.com/johnnylarner/projected.git"
+homepage = "https://github.com/johnnylarner/projected.git"
+
+
+[dependencies]
+gdal = { version = "0.17.1", features = ["bindgen"] }
+geo = "0.29.3"
+proj = "0.28.0"
+
+
+[lib]
+name = "projected"
+path = "src/lib.rs"
+test = true
+doctest = true
+bench = true
+doc = true
+proc-macro = false
+crate-type = ["lib"]
+required-features = []
