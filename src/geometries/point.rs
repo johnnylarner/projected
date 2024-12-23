@@ -11,14 +11,35 @@ pub struct ProjectedPoint<Projection> {
     _marker: PhantomData<Projection>,
 }
 
-impl ProjectedPoint<Epsg4326> {
-    fn new(point: Point) -> Self {
-        Self {
-            point,
-            _marker: PhantomData,
+macro_rules! point_constructor {
+    ( for $( $t:ty ),* ) => {
+        $(
+        impl ProjectedPoint<$t> {
+            pub fn new(point: Point) -> ProjectedPoint<$t> {
+                Self {
+                    point,
+                    _marker: PhantomData,
+                }
+            }
         }
-    }
+        )*
+    };
 }
+
+macro_rules! point_value {
+    ( for $( $t:ty ),* ) => {
+        $(
+        impl ProjectedPoint<$t> {
+            pub fn point(&self) -> &Point {
+                &self.point
+            }
+        }
+        )*
+    };
+}
+
+point_constructor!(for Epsg4326, Epsg3035);
+point_value!(for Epsg4326, Epsg3035);
 
 impl ToEpsg4326 for ProjectedPoint<Epsg3035> {
     type Output = ProjectedPoint<Epsg4326>;
@@ -45,19 +66,26 @@ impl ToEpsg3035 for ProjectedPoint<Epsg4326> {
 }
 
 #[cfg(test)]
+mod macro_methods {
+    use super::*;
+    #[test]
+    fn assign_correctly() {
+        let p = Point::new(2.0, 2.1);
+        let marco_method_point = ProjectedPoint::<Epsg4326>::new(p);
+        assert_eq!(marco_method_point.point(), &p);
+    }
+}
+
+#[cfg(test)]
 mod projections {
-    use geo::Point;
-
-    use crate::projections::ToEpsg3035;
-
-    use super::ProjectedPoint;
+    use super::*;
 
     #[test]
     fn change_when_converted() {
         let p = Point::new(2.0, 2.1);
-        let p = ProjectedPoint::new(p);
+        let p = ProjectedPoint::<Epsg4326>::new(p);
         let projected = p.to_epsg_3035();
 
-        assert_ne!(p.point, projected.point);
+        assert_ne!(p.point(), projected.point());
     }
 }
