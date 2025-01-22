@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use geo::Point;
-use proj::Proj;
+use proj::{Proj, Transform};
 
 use crate::projections::{Epsg3035, Epsg4326, ToEpsg3035, ToEpsg4326, EPSG_3035, EPSG_4326};
 
@@ -38,7 +38,7 @@ impl ToEpsg4326 for ProjectedPoint<Epsg3035> {
     type Output = ProjectedPoint<Epsg4326>;
     fn to_epsg_4326(&self) -> Self::Output {
         let crs = Proj::new_known_crs(EPSG_3035, EPSG_4326, None).unwrap();
-        let transformed = crs.convert(self.point).unwrap();
+        let transformed = self.point.transformed(&crs).unwrap();
         ProjectedPoint {
             point: transformed,
             _marker: PhantomData,
@@ -50,7 +50,7 @@ impl ToEpsg3035 for ProjectedPoint<Epsg4326> {
     type Output = ProjectedPoint<Epsg3035>;
     fn to_epsg_3035(&self) -> Self::Output {
         let crs = Proj::new_known_crs(EPSG_4326, EPSG_3035, None).unwrap();
-        let transformed = crs.convert(self.point).unwrap();
+        let transformed = self.point.transformed(&crs).unwrap();
         ProjectedPoint {
             point: transformed,
             _marker: PhantomData,
