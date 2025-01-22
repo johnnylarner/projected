@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use geo::Point;
+use geo::{Geometry, Point};
 use proj::{Proj, Transform};
 
 use crate::projections::{Epsg3035, Epsg4326, ToEpsg3035, ToEpsg4326, EPSG_3035, EPSG_4326};
@@ -17,6 +17,12 @@ impl ProjectedPoint<Epsg4326> {
             point,
             _marker: PhantomData,
         }
+    }
+}
+
+impl<T> Into<Geometry> for ProjectedPoint<T> {
+    fn into(self) -> Geometry {
+        Geometry::Point(self.point)
     }
 }
 

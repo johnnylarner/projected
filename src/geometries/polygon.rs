@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use geo::Polygon;
+use geo::{Geometry, Polygon};
 use proj::{Proj, Transform};
 
 use crate::projections::{Epsg3035, Epsg4326, ToEpsg3035, ToEpsg4326, EPSG_3035, EPSG_4326};
@@ -17,6 +17,12 @@ impl ProjectedPolygon<Epsg4326> {
             polygon,
             _marker: PhantomData,
         }
+    }
+}
+
+impl<T> Into<Geometry> for ProjectedPolygon<T> {
+    fn into(self) -> Geometry {
+        Geometry::Polygon(self.polygon)
     }
 }
 
