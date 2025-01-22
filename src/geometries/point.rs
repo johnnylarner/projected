@@ -6,12 +6,12 @@ use proj::Proj;
 use crate::projections::{Epsg3035, Epsg4326, ToEpsg3035, ToEpsg4326, EPSG_3035, EPSG_4326};
 
 #[derive(Clone, Debug)]
-pub struct ProjectedPoint<Projection = Epsg4326> {
+pub struct ProjectedPoint<Projection> {
     point: Point,
     _marker: PhantomData<Projection>,
 }
 
-impl ProjectedPoint {
+impl ProjectedPoint<Epsg4326> {
     pub fn new(point: geo::Point) -> ProjectedPoint<Epsg4326> {
         Self {
             point,
@@ -78,7 +78,6 @@ mod projections {
         let p = Point::new(2.0, 2.1);
         let p = ProjectedPoint::new(p);
         let projected = p.to_epsg_3035();
-
         assert_ne!(p.point(), projected.point());
     }
 }
