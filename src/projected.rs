@@ -3,13 +3,13 @@ use std::marker::PhantomData;
 use geo::Geometry;
 
 use crate::{
+    Epsg3035, Epsg4326, Projectable, ProjectedPoint, ToEpsg3035,
     geometries::{ProjectedMultiPolygon, ProjectedPolygon},
-    Epsg3035, Epsg4326, ProjectedPoint, ToEpsg3035,
 };
 
-pub struct ProjectedGeometry<Projection> {
+pub struct ProjectedGeometry<P: Projectable> {
     geometry: Geometry,
-    _marker: PhantomData<Projection>,
+    _marker: PhantomData<P>,
 }
 
 impl ProjectedGeometry<Epsg4326> {
@@ -57,7 +57,7 @@ impl ToEpsg3035 for ProjectedGeometry<Epsg4326> {
 #[cfg(test)]
 mod projections {
     use super::*;
-    use geo::{point, polygon, MultiPolygon};
+    use geo::{MultiPolygon, point, polygon};
 
     fn point() -> Geometry {
         let point = point!(x: -111., y: 45.);
