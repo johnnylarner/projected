@@ -3,7 +3,10 @@ use std::marker::PhantomData;
 use geo::{Geometry, Polygon};
 use proj::{Proj, Transform};
 
-use crate::projections::{Epsg3035, Epsg4326, ToEpsg3035, ToEpsg4326, EPSG_3035, EPSG_4326};
+use crate::{
+    HasCentroid, Laea, ProjectedGeometry, ToLaea, make_laea_str,
+    projections::{EPSG_3035, EPSG_4326, Epsg3035, Epsg4326, ToEpsg3035, ToEpsg4326},
+};
 
 #[derive(Clone, Debug)]
 pub struct ProjectedPolygon<Projection> {
@@ -38,7 +41,7 @@ macro_rules! polygon_value {
     };
 }
 
-polygon_value!(for Epsg4326, Epsg3035);
+polygon_value!(for Epsg4326, Epsg3035, Laea);
 
 impl ToEpsg4326 for ProjectedPolygon<Epsg3035> {
     type Output = ProjectedPolygon<Epsg4326>;
@@ -57,6 +60,39 @@ impl ToEpsg3035 for ProjectedPolygon<Epsg4326> {
     fn to_epsg_3035(&self) -> Self::Output {
         let crs = Proj::new_known_crs(EPSG_4326, EPSG_3035, None).unwrap();
         let transformed = self.polygon.transformed(&crs).unwrap();
+        ProjectedPolygon {
+            polygon: transformed,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl ToLaea for ProjectedPolygon<Epsg4326> {
+    type Output = ProjectedPolygon<Laea>;
+    fn to_laea(&self, origin: &ProjectedGeometry<Epsg4326>) -> Self::Output {
+        let origin_center = origin.centriod();
+        let (x, y) = origin_center.x_y();
+        let proj_with_centriod = make_laea_str(y, x);
+        println!("{}", proj_with_centriod);
+        let crs = Proj::new_known_crs(EPSG_4326, &proj_with_centriod, None).unwrap();
+        let transformed = self.polygon.transformed(&crs).unwrap();
+        ProjectedPolygon {
+            polygon: transformed,
+            _marker: PhantomData,
+        }
+    }
+}
+impl ToLaea for ProjectedPolygon<Epsg3035> {
+    type Output = ProjectedPolygon<Laea>;
+    fn to_laea(&self, origin: &ProjectedGeometry<Epsg4326>) -> Self::Output {
+        let origin_center = origin.centriod();
+        let (x, y) = origin_center.x_y();
+        let proj_with_centroid = make_laea_str(y, x);
+        let transformed = {
+            let as_lat_lon = self.to_epsg_4326();
+            let crs = Proj::new_known_crs(EPSG_4326, &proj_with_centroid, None).unwrap();
+            as_lat_lon.polygon().transformed(&crs).unwrap()
+        };
         ProjectedPolygon {
             polygon: transformed,
             _marker: PhantomData,
@@ -85,6 +121,7 @@ mod macro_methods {
 
 #[cfg(test)]
 mod projections {
+
     use super::*;
     use geo::polygon;
 
@@ -96,8 +133,20 @@ mod projections {
             (x: -104., y: 41.),
             (x: -104., y: 45.),
         ];
-        let p = ProjectedPolygon::new(poly);
+        let p = ProjectedPolygon::new(poly.clone());
         let projected = p.to_epsg_3035();
+        assert_ne!(p.polygon(), projected.polygon());
+
+        let p = ProjectedPolygon::new(poly.clone());
+        let as_geo: ProjectedGeometry<Epsg4326> = p.clone().into();
+        let projected = p.to_laea(&as_geo);
+        assert_ne!(p.polygon(), projected.polygon());
+
+        let p = ProjectedPolygon::new(poly.clone());
+        let as_geo: ProjectedGeometry<Epsg4326> = p.clone().into();
+
+        let p = p.to_epsg_3035();
+        let projected = p.to_laea(&as_geo);
         assert_ne!(p.polygon(), projected.polygon());
     }
 }

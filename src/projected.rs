@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 
-use geo::Geometry;
+use geo::{Geometry, Point};
 
 use crate::{
-    Epsg3035, Epsg4326, Projectable, ProjectedPoint, ToEpsg3035,
+    Epsg3035, Epsg4326, HasCentroid, Projectable, ProjectedPoint, ToEpsg3035,
     geometries::{ProjectedMultiPolygon, ProjectedPolygon},
 };
 
@@ -16,6 +16,19 @@ impl ProjectedGeometry<Epsg4326> {
     pub fn new(geometry: Geometry) -> ProjectedGeometry<Epsg4326> {
         Self {
             geometry,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<P> From<ProjectedPolygon<P>> for ProjectedGeometry<P>
+where
+    P: Projectable,
+{
+    fn from(value: ProjectedPolygon<P>) -> Self {
+        let geo: Geometry = value.into();
+        Self {
+            geometry: geo,
             _marker: PhantomData,
         }
     }
@@ -49,6 +62,20 @@ impl ToEpsg3035 for ProjectedGeometry<Epsg4326> {
                     _marker: PhantomData,
                 }
             }
+            _ => unreachable!("unsupported geometry"),
+        }
+    }
+}
+
+impl<P> HasCentroid for ProjectedGeometry<P>
+where
+    P: Projectable,
+{
+    fn centriod(&self) -> Point {
+        match &self.geometry {
+            Geometry::Point(p) => p.centriod(),
+            Geometry::Polygon(p) => p.centriod(),
+            Geometry::MultiPolygon(mp) => mp.centriod(),
             _ => unreachable!("unsupported geometry"),
         }
     }
